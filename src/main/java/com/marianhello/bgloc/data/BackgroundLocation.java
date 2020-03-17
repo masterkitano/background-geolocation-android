@@ -769,6 +769,20 @@ public class BackgroundLocation implements Parcelable {
         return false;
     }
 
+    public float distanceTo(BackgroundLocation destination)
+    {
+        Location locationA = new Location("point A");
+
+        locationA.setLatitude(getLatitude());
+        locationA.setLongitude(getLongitude());
+
+        Location locationB = new Location("point B");
+
+        locationB.setLatitude(destination.getLatitude());
+        locationB.setLongitude(destination.getLongitude());
+
+        return locationA.distanceTo(locationB);
+    }
     /**
      * Check if given location is better that instance
      * @param location to compare is android Location
@@ -858,7 +872,7 @@ public class BackgroundLocation implements Parcelable {
         if (hasMockLocationsEnabled()) json.put("mockLocationsEnabled", areMockLocationsEnabled());
 
         return json;
-  	}
+    }
 
     /**
      * Returns location as JSON object containing location id

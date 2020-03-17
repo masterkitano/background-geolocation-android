@@ -3,7 +3,9 @@ package com.marianhello.bgloc;
 import android.os.Build;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -69,16 +71,31 @@ public class HttpPostService {
 
         HttpURLConnection conn = this.openConnection();
         conn.setDoOutput(true);
-        conn.setFixedLengthStreamingMode(body.length());
+        Boolean parseFormData = false;
+
         conn.setRequestMethod("POST");
-        conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+        conn.setRequestProperty("Content-Type", "application/json");
         Iterator<Map.Entry<String, String>> it = headers.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<String, String> pair = it.next();
             conn.setRequestProperty(pair.getKey(), pair.getValue());
+
+            if(pair.getKey().equals("Content-Type")
+                    && pair.getValue().equals("application/x-www-form-urlencoded"))
+            {
+                parseFormData = true;
+            }
         }
 
-        body = JSONStringToQueryString(body);
+        if(parseFormData) {
+            try {
+                body = JSONStringToQueryString(body);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        conn.setFixedLengthStreamingMode(body.length());
 
         OutputStreamWriter os = null;
         try {
@@ -168,19 +185,32 @@ public class HttpPostService {
         return service.postJSONFile(file, headers, listener);
     }
 
-    public String JSONStringToQueryString(String unparsedString){
+    public String JSONStringToQueryString(String unparsedString) throws JSONException {
+        Object json = new JSONTokener(unparsedString).nextValue();
         StringBuilder sb = new StringBuilder();
-        JSONObject json = new JSONObject(unparsedString);
-        Iterator<String> keys = json.keys();
+        JSONObject jsonLocation = new JSONObject();
+
+        if (json instanceof JSONObject)
+        {
+            jsonLocation = (JSONObject) json;
+
+        }
+        else if (json instanceof JSONArray)
+        {
+            jsonLocation = (JSONObject) ((JSONArray) json).get(0);
+        }
+
+        Iterator<String> keys = jsonLocation.keys();
         //sb.append("?"); //start of query args
         while (keys.hasNext()) {
             String key = keys.next();
             sb.append(key);
             sb.append("=");
-            sb.append(json.get(key));
+            sb.append(jsonLocation.get(key));
             sb.append("&"); //To allow for another argument.
 
         }
+
 
         return sb.toString();
     }

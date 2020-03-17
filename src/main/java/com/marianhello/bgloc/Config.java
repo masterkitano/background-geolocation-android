@@ -41,6 +41,7 @@ public class Config implements Parcelable
 
     private Float stationaryRadius;
     private Integer distanceFilter;
+    private Integer angleFilter;
     private Integer desiredAccuracy;
     private Boolean debug;
     private String notificationTitle;
@@ -71,6 +72,7 @@ public class Config implements Parcelable
     public Config(Config config) {
         this.stationaryRadius = config.stationaryRadius;
         this.distanceFilter = config.distanceFilter;
+        this.angleFilter = config.angleFilter;
         this.desiredAccuracy = config.desiredAccuracy;
         this.debug = config.debug;
         this.notificationTitle = config.notificationTitle;
@@ -120,6 +122,7 @@ public class Config implements Parcelable
         setSyncUrl(in.readString());
         setSyncThreshold(in.readInt());
         setMaxLocations(in.readInt());
+        setAngleFilter(in.readInt());
         Bundle bundle = in.readBundle();
         setHttpHeaders((HashMap<String, String>) bundle.getSerializable("httpHeaders"));
         setTemplate((LocationTemplate) bundle.getSerializable(AbstractLocationTemplate.BUNDLE_KEY));
@@ -128,6 +131,7 @@ public class Config implements Parcelable
     public static Config getDefault() {
         Config config = new Config();
         config.stationaryRadius = 50f;
+        config.angleFilter = 90;
         config.distanceFilter = 500;
         config.desiredAccuracy = 100;
         config.debug = false;
@@ -183,6 +187,7 @@ public class Config implements Parcelable
         out.writeString(getSyncUrl());
         out.writeInt(getSyncThreshold());
         out.writeInt(getMaxLocations());
+        out.writeInt(getAngleFilter());
         Bundle bundle = new Bundle();
         bundle.putSerializable("httpHeaders", getHttpHeaders());
         bundle.putSerializable(AbstractLocationTemplate.BUNDLE_KEY, (AbstractLocationTemplate) getTemplate());
@@ -232,12 +237,24 @@ public class Config implements Parcelable
         return distanceFilter != null;
     }
 
+    public boolean hasAngleFilter() {
+        return angleFilter != null;
+    }
+
     public Integer getDistanceFilter() {
         return distanceFilter;
     }
 
+    public Integer getAngleFilter() {
+        return angleFilter;
+    }
+
     public void setDistanceFilter(Integer distanceFilter) {
         this.distanceFilter = distanceFilter;
+    }
+
+    public void setAngleFilter(Integer angleFilter) {
+        this.angleFilter = angleFilter;
     }
 
     public boolean hasDebug() {
@@ -547,6 +564,7 @@ public class Config implements Parcelable
                 .append(" httpHeaders=").append(getHttpHeaders().toString())
                 .append(" maxLocations=").append(getMaxLocations())
                 .append(" postTemplate=").append(hasTemplate() ? getTemplate().toString() : null)
+                .append(" angleFilter=").append(getAngleFilter())
                 .append("]")
                 .toString();
     }
@@ -570,8 +588,9 @@ public class Config implements Parcelable
         if (config2.hasStationaryRadius()) {
             merger.setStationaryRadius(config2.getStationaryRadius());
         }
-        if (config2.hasDistanceFilter()) {
-            merger.setDistanceFilter(config2.getDistanceFilter());
+
+        if (config2.hasAngleFilter()) {
+            merger.setAngleFilter(config2.getAngleFilter());
         }
         if (config2.hasDesiredAccuracy()) {
             merger.setDesiredAccuracy(config2.getDesiredAccuracy());
@@ -638,6 +657,9 @@ public class Config implements Parcelable
         }
         if (config2.hasTemplate()) {
             merger.setTemplate(config2.getTemplate());
+        }
+        if (config2.hasDistanceFilter()) {
+            merger.setDistanceFilter(config2.getDistanceFilter());
         }
 
         return merger;
