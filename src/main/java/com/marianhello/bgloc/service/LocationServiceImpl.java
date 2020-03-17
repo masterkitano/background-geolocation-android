@@ -221,8 +221,6 @@ public class LocationServiceImpl extends Service implements ProviderDelegate, Lo
             }
         });
 
-        start();
-
         registerReceiver(connectivityChangeReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
         NotificationHelper.registerServiceChannel(this);
     }
