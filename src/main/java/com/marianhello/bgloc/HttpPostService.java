@@ -71,12 +71,14 @@ public class HttpPostService {
         conn.setDoOutput(true);
         conn.setFixedLengthStreamingMode(body.length());
         conn.setRequestMethod("POST");
-        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
         Iterator<Map.Entry<String, String>> it = headers.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<String, String> pair = it.next();
             conn.setRequestProperty(pair.getKey(), pair.getValue());
         }
+
+        body = JSONStringToQueryString(body);
 
         OutputStreamWriter os = null;
         try {
@@ -164,5 +166,22 @@ public class HttpPostService {
     public static int postJSONFile(String url, File file, Map headers, UploadingProgressListener listener) throws IOException {
         HttpPostService service = new HttpPostService(url);
         return service.postJSONFile(file, headers, listener);
+    }
+
+    public String JSONStringToQueryString(String unparsedString){
+        StringBuilder sb = new StringBuilder();
+        JSONObject json = new JSONObject(unparsedString);
+        Iterator<String> keys = json.keys();
+        //sb.append("?"); //start of query args
+        while (keys.hasNext()) {
+            String key = keys.next();
+            sb.append(key);
+            sb.append("=");
+            sb.append(json.get(key));
+            sb.append("&"); //To allow for another argument.
+
+        }
+
+        return sb.toString();
     }
 }
