@@ -50,6 +50,8 @@ public class DistanceFilterLocationProvider extends AbstractLocationProvider imp
     private static final int MAX_STATIONARY_ACQUISITION_ATTEMPTS = 5;
     private static final int MAX_SPEED_ACQUISITION_ATTEMPTS = 3;
 
+    protected static final int MINIMUM_INTERVAL = 1000;
+
     private Boolean isMoving = false;
     private Boolean isAcquiringStationaryLocation = false;
     private Boolean isAcquiringSpeed = false;
@@ -164,7 +166,12 @@ public class DistanceFilterLocationProvider extends AbstractLocationProvider imp
      * @param value set true to engage "aggressive", battery-consuming tracking, false for stationary-region tracking
      */
     private void setPace(Boolean value) {
-        if (!isStarted) {
+
+        Integer distance = mConfig.getDistanceFilter();
+        Integer angle = mConfig.getAngleFilter();
+        Integer interval = mConfig.getInterval();
+
+        if (!isStarted || (distance == 0 && angle == 0 && interval == 0)) {
             return;
         }
 
@@ -202,7 +209,8 @@ public class DistanceFilterLocationProvider extends AbstractLocationProvider imp
                     }
                 }
             } else {
-                locationManager.requestLocationUpdates(locationManager.getBestProvider(criteria, true), mConfig.getInterval(), scaledDistanceFilter, this);
+                //request positions only if config has at least one parameter for location check
+                locationManager.requestLocationUpdates(locationManager.getBestProvider(criteria, true), distance > 0 || angle > 0 ? MINIMUM_INTERVAL : interval, 0, this);
             }
         } catch (SecurityException e) {
             logger.error("Security exception: {}", e.getMessage());
@@ -288,7 +296,7 @@ public class DistanceFilterLocationProvider extends AbstractLocationProvider imp
             setPace(false);
         }
 
-        showDebugToast( "mv:" + isMoving + ",acy:" + location.getAccuracy() + ",v:" + location.getSpeed() + ",df:" + scaledDistanceFilter);
+        showDebugToast( "mock:"+location.isFromMockProvider()+", mv:" + isMoving + ",acy:" + location.getAccuracy() + ",v:" + location.getSpeed() + ",df:" + scaledDistanceFilter);
 
         if (isAcquiringStationaryLocation) {
             if (stationaryLocation == null || stationaryLocation.getAccuracy() > location.getAccuracy()) {
@@ -329,15 +337,27 @@ public class DistanceFilterLocationProvider extends AbstractLocationProvider imp
                 scaledDistanceFilter = newDistanceFilter;
                 setPace(true);
             }
-            if (lastLocation != null && location.distanceTo(lastLocation) < mConfig.getDistanceFilter()) {
+            /*if (lastLocation != null && location.distanceTo(lastLocation) < mConfig.getDistanceFilter()) {
                 return;
-            }
+            }*/
         } else if (stationaryLocation != null) {
             return;
         }
-        // Go ahead and cache, push to server
-        lastLocation = location;
-        handleLocation(location);
+
+        Integer distanceFilter = mConfig.getDistanceFilter();
+        Integer angleFilter = mConfig.getAngleFilter();
+        Integer interval = mConfig.getInterval();
+
+        if (location != null && (lastLocation == null
+                || (location.getTime() - lastLocation.getTime() >= interval && interval >0)
+                || distanceFilter > 0 && location.distanceTo(lastLocation) >= distanceFilter
+                || angleFilter > 0 && Math.abs(location.getBearing() - lastLocation.getBearing()) >= angleFilter)) {
+            // Go ahead and cache, push to server
+            lastLocation = location;
+            handleLocation(location);
+        } else {
+            logger.info(location != null ? "location ignored" : "location nil");
+        }
     }
 
     public void resetStationaryAlarm() {

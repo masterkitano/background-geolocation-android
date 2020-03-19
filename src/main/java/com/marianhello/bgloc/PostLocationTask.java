@@ -6,6 +6,7 @@ import com.marianhello.logging.LoggerManager;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -141,7 +142,12 @@ public class PostLocationTask {
         JSONArray jsonLocations = new JSONArray();
 
         try {
-            jsonLocations.put(mConfig.getTemplate().locationToJson(location));
+            JSONObject locationJSONObj = (JSONObject) mConfig.getTemplate().locationToJson(location);
+            if(location.isFromMockProvider()) {
+                locationJSONObj.put("mock", true);
+            }
+            
+            jsonLocations.put(locationJSONObj);
         } catch (JSONException e) {
             logger.warn("Location to json failed: {}", location.toString());
             return false;

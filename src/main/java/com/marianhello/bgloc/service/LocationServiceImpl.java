@@ -120,7 +120,6 @@ public class LocationServiceImpl extends Service implements ProviderDelegate, Lo
     private PostLocationTask mPostLocationTask;
     private String mHeadlessTaskRunnerClass;
     private TaskRunner mHeadlessTaskRunner;
-    private BackgroundLocation lastLocation;
 
     private long mServiceId = -1;
     private static boolean sIsRunning = false;
@@ -696,21 +695,7 @@ public class LocationServiceImpl extends Service implements ProviderDelegate, Lo
     }
 
     private void postLocation(BackgroundLocation location) {
-        Config config = getConfig();
-        Integer distanceFilter = config.getDistanceFilter();
-        Integer angleFilter = config.getAngleFilter();
-        Integer interval = config.getInterval();
-
-        if (location != null && (lastLocation == null
-                || location.getTime() - lastLocation.getTime() >= interval
-                || distanceFilter > 0 && location.distanceTo(lastLocation) >= distanceFilter
-                || angleFilter > 0 && Math.abs(location.getBearing() - lastLocation.getBearing()) >= angleFilter)) {
-
-            lastLocation = location;
-            mPostLocationTask.add(location);
-        } else {
-            logger.info(location != null ? "location ignored" : "location nil");
-        }
+        mPostLocationTask.add(location);
     }
 
     public void handleRequestedAbortUpdates() {
